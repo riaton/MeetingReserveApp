@@ -9,8 +9,8 @@ namespace MeetingReserveApp;
 public class DeleteMeetingSQSReceive
 {
     //Todo: こいつ環境変数
-    private const string QueueURL = 
-      "https://sqs.ap-northeast-1.amazonaws.com/649241307730/LambdaDLQ";
+    private string? QueueURL = 
+      Environment.GetEnvironmentVariable("DLQ_NAME");
     private const string MessageGroupId = "DeleteMeetingFailed";
     private const string MessageDeduplicationId = "DeleteMeetingFailedDup";
     public IAmazonSQS sqsClient = new AmazonSQSClient();

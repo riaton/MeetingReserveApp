@@ -4,8 +4,7 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 
 public class DynamoDBAccess : IGetConferenceRepository {
-    //Todo: こいつ環境変数
-    private const string Table = "MeetingsTable";
+    private string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
     public IAmazonDynamoDB _dynamoDBClient = new AmazonDynamoDBClient();
     
     /// <summary>

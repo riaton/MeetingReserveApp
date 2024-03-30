@@ -2,8 +2,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
 public class DynamoDBUpdate : IUpdateConferenceRepository {
-    //Todo: こいつ環境変数
-    private const string Table = "MeetingsTable";
+    private string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
     public AmazonDynamoDBClient client = new AmazonDynamoDBClient();
     
     /// <summary>

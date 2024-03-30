@@ -8,8 +8,8 @@ namespace MeetingReserveApp;
 public class DeleteMeetingSQSSend
 {
     //Todo: こいつ環境変数
-    private const string QueueURL = 
-      "https://sqs.ap-northeast-1.amazonaws.com/649241307730/conference.fifo";
+    private string? QueueURL = 
+      Environment.GetEnvironmentVariable("SEND_QUEUE_NAME");
     private const string MessageGroupId = "DeleteMeeting";
     private const string MessageDeduplicationId = "DeleteMeetingDup";
     public IAmazonSQS _sqsClient = new AmazonSQSClient();
