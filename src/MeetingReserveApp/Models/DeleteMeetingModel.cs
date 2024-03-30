@@ -1,9 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
 public class DeleteMeetingRequestModel {
-    private const string FillPrefix = "fill@";
     private const string BeginsPrefix = "begins@";
-    private const int BatchDeleteMaxCount = 25;
     private const string _ = "_";
     [Required]
     [MaxLength(50)]
@@ -27,5 +25,8 @@ public class DeleteMeetingRequestModel {
     public string? EndAt { get; set; }
     public string CreatePartitionKey(){
         return Date + _ + Room;
+    }
+    public string CreateSortKey(){
+        return BeginsPrefix + StartAt;
     }
 }

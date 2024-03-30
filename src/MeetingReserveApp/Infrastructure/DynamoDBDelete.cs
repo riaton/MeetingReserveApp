@@ -17,7 +17,8 @@ public class DynamoDBDelete : IDeleteConferenceRepository {
             var param = new DeleteItemRequest{
                 TableName = Table,
                 Key = new Dictionary<string, AttributeValue>(){
-                {"date_room", new AttributeValue{ S = model.CreatePartitionKey() }}},
+                {"date_room", new AttributeValue{ S = model.CreatePartitionKey() }},
+                {"time", new AttributeValue{ S = model.CreateSortKey() }}},
                 ExpressionAttributeNames = new Dictionary<string, string>(){
                     { "#v", "end_at" },
                 },
