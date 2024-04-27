@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: A SAM template for deploying Lambda functions which serve meeting app logic.
+
+Globals:
+  Function:
+    Runtime: dotnet6
+    Timeout: 10
+    CodeUri: .
+    DeploymentPreference: 
+      Type: Canary10Percent5Minutes
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref dynamoDBMeetingsTable
+        QUEUE_URL: https://sqs.ap-northeast-1.amazonaws.com/649241307730/conference.fifo
+        DLQ_URL: "https://sqs.ap-northeast-1.amazonaws.com/649241307730/LambdaDLQ"
+Resources:
+  api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      Cors:
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowMethods: "'OPTIONS'"
+        AllowOrigin: "'*'"
+      #Auth:
+      #  DefaultAuthorizer: CognitoAuthorizer
+      #  Authorizers:
+      #    CognitoAuthorizer:
+      #      UserPoolArn: arn:aws:cognito-idp:ap-northeast-1:649241307730:userpool/ap-northeast-1_OFmOfbmBh
+  dynamoDBMeetingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MeetingsTable
+      AttributeDefinitions: 
+        - AttributeName: date_room
+          AttributeType: S
+        - AttributeName: time
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: date_room
+          KeyType: HASH
+        - AttributeName: time
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  getOneMeetingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: SampleFunction::SampleFunction.GetOneMeeting::GetOneMeetingHandler
+      AutoPublishAlias: getOneMeeting
+      Policies:
+        - AmazonDynamoDBReadOnlyAccess
+      Events:
+        GetOne:
+          Type: Api
+          Properties:
+            Path: /getOneMeeting/{Room}/{StartAt}
+            Method: get
+            RestApiId: !Ref api
+  getAllMeetingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: SampleFunction::SampleFunction.GetAllMeetings::GetAllMeetingsHandler
+      AutoPublishAlias: getAllMeeting
+      Policies:
+        - AmazonDynamoDBReadOnlyAccess
+      Events:
+        GetAll:
+          Type: Api
+          Properties:
+            Path: /getAllMeeting/{Room}/{StartDate}
+            Method: get
+            RestApiId: !Ref api
+  registerMeetingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: SampleFunction::SampleFunction.RegisterMeeting::RegisterMeetingHandler
+      AutoPublishAlias: registerMeeting
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Events:
+        Register:
+          Type: Api
+          Properties:
+            Path: /registerMeeting
+            Method: post
+            RestApiId: !Ref api
+  updateMeetingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: SampleFunction::SampleFunction.UpdateMeeting::UpdateMeetingHandler
+      AutoPublishAlias: updateMeeting
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Events:
+        Update:
+          Type: Api
+          Properties:
+            Path: /updateMeeting
+            Method: post
+            RestApiId: !Ref api
+  deleteMeetingSendToSQSFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: SampleFunction::SampleFunction.DeleteMeetingSQSSend::DeleteMeetingSQSSendHandler
+      AutoPublishAlias: deleteMeetingSendToSQS
+      Policies:
+        - AmazonSQSFullAccess 
+      Events:
+        Delete:
+          Type: Api
+          Properties:
+            Path: /deleteMeeting
+            Method: post
+            RestApiId: !Ref api
+  deleteMeetingReceiveFromSQSFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: SampleFunction::SampleFunction.DeleteMeetingSQSReceive::DeleteMeetingSQSReceiveHandler
+      AutoPublishAlias: deleteMeetingReceiveFromSQS
+      Policies:
+        - AWSLambdaSQSQueueExecutionRole
+        - AmazonDynamoDBFullAccess
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: arn:aws:sqs:ap-northeast-1:649241307730:LambdaDLQ
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: arn:aws:sqs:ap-northeast-1:649241307730:conference.fifo

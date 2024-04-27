@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
+namespace MeetingApp.Models;
 public class UpdateMeetingRequestModel {
     private const string BeginsPrefix = "begins@";
     private const string _ = "_";

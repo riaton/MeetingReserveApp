@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Amazon.DynamoDBv2.Model;
 
+namespace MeetingApp.Models;
 public class GetOneRequestModel {
     private const string _ = "_";
     private const string prefix = "begins@";
@@ -41,6 +42,7 @@ public class GetOneResponseModel {
             if(item.Key == "time") listHourFrom = ConvertHourFrom(item.Value.S);
             if(item.Key == "contents") Contents = item.Value.S;
             if(item.Key == "members") Participants = item.Value.SS;
+            if(item.Key == "email") Email = item.Value.S;
             if(item.Key == "end_at") listHourTo = ConvertEndAt(item.Value.S);
             if(listHourTo == null){
                 Status = false;
@@ -56,6 +58,7 @@ public class GetOneResponseModel {
         MinTo = listHourTo[1];
     }
     public bool Status { get; set; } = true;
+    public string? Email { get; }
     public string? Title { get; }
     public string? Room { get; }
     public int? YearFrom { get; }

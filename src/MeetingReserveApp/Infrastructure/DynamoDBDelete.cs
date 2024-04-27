@@ -1,8 +1,11 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using MeetingApp.Models;
 
+namespace MeetingApp.Infrastructure;
 public class DynamoDBDelete : IDeleteConferenceRepository {
     private string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
+    //private string? Table = "MeetingsTable";
     public AmazonDynamoDBClient client = new AmazonDynamoDBClient();
 
     /// <summary>
@@ -13,6 +16,10 @@ public class DynamoDBDelete : IDeleteConferenceRepository {
     public async Task<int> Delete(DeleteMeetingRequestModel model){
         try
         {
+            if(Table == null){
+                Console.WriteLine("Environment variable of table name is null at Delete()");
+                return CommonResult.InternalServerError;
+            }
             var param = new DeleteItemRequest{
                 TableName = Table,
                 Key = new Dictionary<string, AttributeValue>(){

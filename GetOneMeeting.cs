@@ -4,10 +4,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using MeetingApp.Infrastructure;
+using MeetingApp.Models;
 
 //[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
-namespace MeetingReserveApp;
+namespace MeetingApp;
 public class GetOneMeeting
 {
     public IGetConferenceRepository repository = new DynamoDBAccess();
@@ -43,6 +45,7 @@ public class GetOneMeeting
             return new APIGatewayProxyResponse
             {
                 StatusCode = CommonResult.OK,
+                Headers = CommonResult.ResponseHeader,
                 Body = JsonSerializer.Serialize(resp, _options)
             };
         }
@@ -61,6 +64,7 @@ public class GetOneMeeting
     private APIGatewayProxyResponse CreateErrorResponse(int statusCode){
         return new APIGatewayProxyResponse{
             StatusCode = statusCode,
+            Headers = CommonResult.ResponseHeader,
             Body = CommonResult.FromResult(statusCode)
         };
     }

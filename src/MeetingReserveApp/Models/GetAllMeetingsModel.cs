@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Amazon.DynamoDBv2.DataModel;
 
+namespace MeetingApp.Models;
 public class GetAllMeetingsRequestModel {
     private const string _ = "_";
     private const string Prefix = "begins@";
@@ -31,6 +32,8 @@ public class DynamoDBMeetingsTableItem {
     public string? Title { get; set; }
     [DynamoDBProperty("end_at")]
     public string? EndAt { get; set; }
+    [DynamoDBProperty("email")]
+    public string? Email { get; set; }
 }
 
 public class GetAllMeetingsResponseModel {
@@ -46,11 +49,13 @@ public class GetAllMeetingParts {
         Title = item.Title;
         StartAt = GetStartAt(item.SortKey!);
         EndAt = item.EndAt;
+        Email = item.Email;
     }
     public string? Room { get; set; }
     public string? Title { get; set; }
     public string? StartAt { get; set; }
     public string? EndAt { get; set; }
+    public string? Email { get; set; }
 
     public string GetStartAt(string sortKey){
         return sortKey.Split("@")[1];

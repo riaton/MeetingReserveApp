@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.ComponentModel.DataAnnotations;
 
+namespace MeetingApp;
 internal static class ModelFactory {
     public static (bool validateOk, T? model) CreateModel<T>(string body){
         var result = false;

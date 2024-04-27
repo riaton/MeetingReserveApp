@@ -1,30 +1,32 @@
 using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
+using MeetingApp.Infrastructure;
+using MeetingApp.Models;
 
-[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
+//[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
-namespace MeetingReserveApp;
-public class UpdateMeeting
+namespace MeetingApp;
+public class RegisterMeeting
 {
     public IUpdateConferenceRepository repository = new DynamoDBUpdate();
     /// <summary>
-    /// 会議室情報 更新
+    /// 会議室情報 登録
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <returns>APIGatewayProxyResponseインスタンス</returns>
-    public async Task<APIGatewayProxyResponse> UpdateMeetingHandler(APIGatewayProxyRequest input, ILambdaContext context)
+    public async Task<APIGatewayProxyResponse> RegisterMeetingHandler(APIGatewayProxyRequest input, ILambdaContext context)
     {
         try
         {
             //リクエストのバリデーション
-            var (validateOk, model) = ModelFactory.CreateModel<UpdateMeetingRequestModel>(input.Body);
+            var (validateOk, model) = ModelFactory.CreateModel<RegisterMeetingRequestModel>(input.Body);
             if(validateOk == false || model == null) return CreateResponse(CommonResult.ValidateError);
 
-            //DynamoDBデータ更新
-            int res = await repository.Update(model);
+            //DynamoDBへデータ登録
+            int res = await repository.Register(model);
             if(res != CommonResult.OK) {
-                Console.WriteLine("A meeting update failed");
+                Console.WriteLine("A meeting register failed");
                 return CreateResponse(CommonResult.InternalServerError);
             }
             
@@ -45,7 +47,7 @@ public class UpdateMeeting
     private APIGatewayProxyResponse CreateResponse(int statusCode){
         return new APIGatewayProxyResponse{
             StatusCode = statusCode,
-            Body = CommonResult.FromResult(statusCode)
+            Headers = CommonResult.ResponseHeader
         };
     }
 }

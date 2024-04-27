@@ -2,6 +2,9 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
+using MeetingApp.Models;
+
+namespace MeetingApp.Infrastructure;
 
 public class DynamoDBAccess : IGetConferenceRepository {
     private string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
@@ -15,6 +18,10 @@ public class DynamoDBAccess : IGetConferenceRepository {
     public async Task<List<DynamoDBMeetingsTableItem>?> GetAll(string partitionKey, string sortKeyPrefix){
         try
         {
+            if(Table == null){
+                Console.WriteLine("Environment variable of table name is null at GetAll()");
+                return null;
+            }
             IDynamoDBContext context = new DynamoDBContext(_dynamoDBClient);
             var sortKeys = new[]{ sortKeyPrefix };
             var items = await context.QueryAsync<DynamoDBMeetingsTableItem>
@@ -39,6 +46,10 @@ public class DynamoDBAccess : IGetConferenceRepository {
     public async Task<GetItemResponse?> GetOne(string partitionKey, string sortKey){
         try
         {
+            if(Table == null){
+                Console.WriteLine("Environment variable of table name is null at GetOne()");
+                return null;
+            }
             var param = new GetItemRequest{
                 Key = new Dictionary<string, AttributeValue>(){
                 {"date_room", new AttributeValue{ S = partitionKey }},

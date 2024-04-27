@@ -2,19 +2,17 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
 using Amazon.SQS;
 using Amazon.SQS.Model;
-using System.Text.Json;
+using MeetingApp.Infrastructure;
+using MeetingApp.Models;
 
 //[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
-namespace MeetingReserveApp;
+namespace MeetingApp;
 public class DeleteMeetingSQSReceive
 {
-    //Todo: こいつ環境変数
-    private string? QueueURL = 
-      Environment.GetEnvironmentVariable("DLQ_NAME");
-    private const string MessageGroupId = "DeleteMeetingFailed";
-    private const string MessageDeduplicationId = "DeleteMeetingFailedDup";
-    public IAmazonSQS sqsClient = new AmazonSQSClient();
     public IDeleteConferenceRepository repository = new DynamoDBDelete();
+    private string? QueueURL = 
+      Environment.GetEnvironmentVariable("DLQ_URL");
+    public IAmazonSQS _sqsClient = new AmazonSQSClient();
     /// <summary>
     /// 会議室予約 削除(受け側)
     /// </summary>
@@ -27,12 +25,23 @@ public class DeleteMeetingSQSReceive
         {
             foreach(var record in input.Records){
                 //SQSからデータ受信
-                var model = JsonSerializer.Deserialize<DeleteMeetingRequestModel>(record.Body);
+                var (validateOk, model) = ModelFactory.CreateModel<DeleteMeetingRequestModel>(record.Body);
+                if(validateOk == false || model == null){
+                    Console.WriteLine($"Receive message validation failed, {record.Body}");
+                    //DLQに送信
+                    await SendMessage(_sqsClient, QueueURL, record.Body);
+                    throw new Exception();
+                };
                 //削除
                 int res = await repository.Delete(model!);
-                if(res != CommonResult.OK){
-                    //デッドレターキューへ
-                    await SendMessage(sqsClient, QueueURL, record.Body);
+                if(res == CommonResult.OK){
+                    Console.WriteLine($"delete succeeded, {record.Body}");
+                }
+                else
+                {
+                    Console.WriteLine($"delete failed, {record.Body}");
+                    //DLQに送信
+                    await SendMessage(_sqsClient, QueueURL, record.Body);
                 }
             }
         }
@@ -42,28 +51,27 @@ public class DeleteMeetingSQSReceive
             Console.WriteLine($"Exception occurred, " + e);
         }
     }
+
     /// <summary>
-    /// デッドレターキューへメッセージ送信
+    /// SQSキューへメッセージ送信
     /// </summary>
     /// <param name="sqsClient"></param>
     /// <param name="queueURL"></param>
     /// <param name="messageBody"></param>
     /// <returns>キューに送信した結果のHTTPステータスコード</returns>
     private static async Task SendMessage(
-      IAmazonSQS sqsClient, string queueUrl, string messageBody)
+      IAmazonSQS sqsClient, string? queueUrl, string messageBody)
     {
       SendMessageRequest sendMessageRequest = new SendMessageRequest();
       sendMessageRequest.QueueUrl = queueUrl;
-      sendMessageRequest.MessageGroupId = MessageGroupId;
       sendMessageRequest.MessageBody = messageBody;
-      sendMessageRequest.MessageDeduplicationId = MessageDeduplicationId;
 
       SendMessageResponse response =
         await sqsClient.SendMessageAsync(sendMessageRequest);
-      Console.WriteLine($"Message added to queue\n  {queueUrl}");
-      //一旦ステータスコード200以外はNG
+      Console.WriteLine($"Message added to dead letter queue\n  {queueUrl}");
+      //ステータスコード200以外はNG
       if((int)response.HttpStatusCode != CommonResult.OK){
-          Console.WriteLine("Failed to send message");
+          Console.WriteLine($"Failed to send message to dead letter queue, {messageBody}");
           throw new Exception();
       }
     }

@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
+namespace MeetingApp.Models;
+
 public class DeleteMeetingRequestModel {
     private const string BeginsPrefix = "begins@";
     private const string _ = "_";

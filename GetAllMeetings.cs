@@ -4,14 +4,15 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using MeetingApp.Infrastructure;
+using MeetingApp.Models;
 
 //[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
-namespace MeetingReserveApp;
+namespace MeetingApp;
 public class GetAllMeetings
 {
     public IGetConferenceRepository repository = new DynamoDBAccess();
-    private GetAllMeetingsResponseModel _resModel = new();
     private readonly JsonSerializerOptions _options = new JsonSerializerOptions
             {
                 Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
@@ -36,15 +37,17 @@ public class GetAllMeetings
             var res = await repository.GetAll(model.GetPartitionKey(), 
                 model.GetSortKeyPrefix());
             if(res == null) return CreateErrorResponse(CommonResult.DataNotFound);
-
+            
+            GetAllMeetingsResponseModel resModel = new();
             foreach(var r in res){
-                _resModel.Body.Add(new GetAllMeetingParts(r, model.Room!));
+                resModel.Body.Add(new GetAllMeetingParts(r, model.Room!));
             }
             
             return new APIGatewayProxyResponse
             {
                 StatusCode = CommonResult.OK,
-                Body = JsonSerializer.Serialize(_resModel, _options)
+                Headers = CommonResult.ResponseHeader,
+                Body = JsonSerializer.Serialize(resModel, _options)
             };
         }
         catch(Exception e)
@@ -62,6 +65,7 @@ public class GetAllMeetings
     private APIGatewayProxyResponse CreateErrorResponse(int statusCode){
         return new APIGatewayProxyResponse{
             StatusCode = statusCode,
+            Headers = CommonResult.ResponseHeader,
             Body = CommonResult.FromResult(statusCode)
         };
     }

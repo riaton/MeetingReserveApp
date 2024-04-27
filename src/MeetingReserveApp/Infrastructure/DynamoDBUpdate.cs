@@ -1,6 +1,8 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using MeetingApp.Models;
 
+namespace MeetingApp.Infrastructure;
 public class DynamoDBUpdate : IUpdateConferenceRepository {
     private string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
     public AmazonDynamoDBClient client = new AmazonDynamoDBClient();
@@ -13,6 +15,11 @@ public class DynamoDBUpdate : IUpdateConferenceRepository {
     public async Task<int> Register(RegisterMeetingRequestModel model){
         try
         {
+            if(Table == null) {
+                Console.WriteLine("Environment variable of table name is null at Register()");
+                return CommonResult.InternalServerError;
+            }
+
             Dictionary<string, List<WriteRequest>> requestItem = new();
             requestItem[Table] = CreateRegisterRequest(model);
             BatchWriteItemRequest request = 
@@ -41,6 +48,11 @@ public class DynamoDBUpdate : IUpdateConferenceRepository {
     public async Task<int> Update(UpdateMeetingRequestModel model){
         try
         {
+            if(Table == null) {
+                Console.WriteLine("Environment variable of table name is null at Update()");
+                return CommonResult.InternalServerError;
+            }
+
             model.Contents ??= string.Empty;
             model.Participants ??= new List<string>();
             var param = new UpdateItemRequest{

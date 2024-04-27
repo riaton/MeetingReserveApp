@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
+namespace MeetingApp.Models;
 public class RegisterMeetingRequestModel {
     private const string FillPrefix = "fill@";
     private const string BeginsPrefix = "begins@";

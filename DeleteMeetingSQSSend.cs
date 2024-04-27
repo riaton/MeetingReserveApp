@@ -2,14 +2,14 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
 using Amazon.SQS;
 using Amazon.SQS.Model;
+using MeetingApp.Models;
 
 //[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
-namespace MeetingReserveApp;
+namespace MeetingApp;
 public class DeleteMeetingSQSSend
 {
-    //Todo: こいつ環境変数
     private string? QueueURL = 
-      Environment.GetEnvironmentVariable("SEND_QUEUE_NAME");
+      Environment.GetEnvironmentVariable("QUEUE_URL");
     private const string MessageGroupId = "DeleteMeeting";
     private const string MessageDeduplicationId = "DeleteMeetingDup";
     public IAmazonSQS _sqsClient = new AmazonSQSClient();
@@ -47,7 +47,8 @@ public class DeleteMeetingSQSSend
     /// <returns>APIGatewayProxyResponseインスタンス</returns>
     private APIGatewayProxyResponse CreateResponse(int statusCode){
         return new APIGatewayProxyResponse{
-            StatusCode = statusCode
+            StatusCode = statusCode,
+            Headers = CommonResult.ResponseHeader,
         };
     }
 
@@ -59,7 +60,7 @@ public class DeleteMeetingSQSSend
     /// <param name="messageBody"></param>
     /// <returns>キューに送信した結果のHTTPステータスコード</returns>
     private static async Task SendMessage(
-      IAmazonSQS sqsClient, string queueUrl, string messageBody)
+      IAmazonSQS sqsClient, string? queueUrl, string messageBody)
     {
       SendMessageRequest sendMessageRequest = new SendMessageRequest();
       sendMessageRequest.QueueUrl = queueUrl;
