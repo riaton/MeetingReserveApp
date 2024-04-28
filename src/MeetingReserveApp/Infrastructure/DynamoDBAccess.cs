@@ -7,8 +7,14 @@ using MeetingApp.Models;
 namespace MeetingApp.Infrastructure;
 
 public class DynamoDBAccess : IGetConferenceRepository {
-    private string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
-    public IAmazonDynamoDB _dynamoDBClient = new AmazonDynamoDBClient();
+    private readonly IAmazonDynamoDB _client;
+    private readonly IDynamoDBContext _context;
+    private readonly string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
+    public DynamoDBAccess(IAmazonDynamoDB client, IDynamoDBContext context)
+    {
+        _client = client;
+        _context = context;
+    }
     
     /// <summary>
     /// 会議室情報 全取得(DBアクセス)
@@ -22,9 +28,8 @@ public class DynamoDBAccess : IGetConferenceRepository {
                 Console.WriteLine("Environment variable of table name is null at GetAll()");
                 return null;
             }
-            IDynamoDBContext context = new DynamoDBContext(_dynamoDBClient);
             var sortKeys = new[]{ sortKeyPrefix };
-            var items = await context.QueryAsync<DynamoDBMeetingsTableItem>
+            var items = await _context.QueryAsync<DynamoDBMeetingsTableItem>
                 (partitionKey, QueryOperator.BeginsWith, sortKeys)
                 .GetRemainingAsync(); 
             if(items == null || items.Count == 0) {
@@ -56,7 +61,7 @@ public class DynamoDBAccess : IGetConferenceRepository {
                 {"time", new AttributeValue{ S = sortKey }}},
                 TableName = Table
             };
-            var response = await _dynamoDBClient.GetItemAsync(param);
+            var response = await _client.GetItemAsync(param);
             if(response.Item.Count() == 0) {
                 throw new ResourceNotFoundException("GetOne count is 0");
             }

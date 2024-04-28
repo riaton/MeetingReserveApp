@@ -57,7 +57,7 @@ public class GetAllMeetingParts {
     public string? EndAt { get; set; }
     public string? Email { get; set; }
 
-    public string GetStartAt(string sortKey){
+    public static string GetStartAt(string sortKey){
         return sortKey.Split("@")[1];
     }
 }

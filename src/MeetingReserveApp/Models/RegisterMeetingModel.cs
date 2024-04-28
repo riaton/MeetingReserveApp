@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace MeetingApp.Models;
-public class RegisterMeetingRequestModel {
+public class RegisterMeetingRequestModel : IValidatableObject {
     private const string FillPrefix = "fill@";
     private const string BeginsPrefix = "begins@";
     private const int BatchWriteMaxCount = 25;
@@ -31,19 +31,31 @@ public class RegisterMeetingRequestModel {
     public string? EndAt { get; set; }
     public string? Contents { get; set; }
     public List<string>? Participants { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext context){
+        var results = new List<ValidationResult>();
+        if(int.Parse(StartAt!) - int.Parse(EndAt!) >= 0){
+            results.Add(new ValidationResult("StartAt cannot be later than EndAt." +
+                $"StartAt={StartAt}, EndAt={EndAt}"));
+        }
+        return results;
+    }
+
     public string CreatePartitionKey(){
         return Date + _ + Room;
     }
+
     public string CreateBeginsSortKey(){
         return BeginsPrefix + StartAt;
     }
+
     public List<string> CreateFill(){
         List<string> fillList = new();
         int iterator = int.Parse(StartAt!);
         int end = int.Parse(EndAt!);
         while(iterator != end){
             fillList.Add(FillPrefix + iterator.ToString());
-            if(fillList.Count() == BatchWriteMaxCount) return new List<string>();
+            if(fillList.Count == BatchWriteMaxCount) return new List<string>();
             iterator += 15;
             if((iterator + 40) % 100 == 0) iterator += 40;
         }

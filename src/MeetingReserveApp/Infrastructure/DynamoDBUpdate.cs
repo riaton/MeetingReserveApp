@@ -4,8 +4,13 @@ using MeetingApp.Models;
 
 namespace MeetingApp.Infrastructure;
 public class DynamoDBUpdate : IUpdateConferenceRepository {
-    private string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
-    public AmazonDynamoDBClient client = new AmazonDynamoDBClient();
+    private readonly IAmazonDynamoDB _client;
+    private readonly string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
+
+    public DynamoDBUpdate(IAmazonDynamoDB client)
+    {
+        _client = client;
+    }
     
     /// <summary>
     /// 会議室情報 登録(DBアクセス)
@@ -27,7 +32,7 @@ public class DynamoDBUpdate : IUpdateConferenceRepository {
             BatchWriteItemResponse result;
             do
             {
-                result = await client.BatchWriteItemAsync(request);
+                result = await _client.BatchWriteItemAsync(request);
                 request.RequestItems = result.UnprocessedItems;
             } while (result.UnprocessedItems.Count > 0);
 
@@ -75,7 +80,7 @@ public class DynamoDBUpdate : IUpdateConferenceRepository {
                 UpdateExpression = "SET #v1 = :title, #v2 = :contents, #v3 = :members",
                 ConditionExpression = "#v4 = :requested_by"
             };
-            var res = await client.UpdateItemAsync(param);
+            var res = await _client.UpdateItemAsync(param);
             
             return (int)res.HttpStatusCode;
         }
@@ -86,10 +91,10 @@ public class DynamoDBUpdate : IUpdateConferenceRepository {
         }
     }
 
-    public List<WriteRequest> CreateRegisterRequest(RegisterMeetingRequestModel model){
+    public static List<WriteRequest> CreateRegisterRequest(RegisterMeetingRequestModel model){
         List<WriteRequest> requests = new();
         List<string> fillList = model.CreateFill();
-        if(fillList.Count() == 0) return requests;
+        if(fillList.Count == 0) return requests;
         //@begins
         Dictionary<string, AttributeValue> beginsItem = new();
         beginsItem["date_room"] = new AttributeValue { S = model.CreatePartitionKey() };

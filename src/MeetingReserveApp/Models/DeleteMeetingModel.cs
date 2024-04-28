@@ -25,9 +25,11 @@ public class DeleteMeetingRequestModel {
     [MinLength(4)]
     [RegularExpression(@"^[0-9]*$")]
     public string? EndAt { get; set; }
+
     public string CreatePartitionKey(){
         return Date + _ + Room;
     }
+
     public string CreateSortKey(){
         return BeginsPrefix + StartAt;
     }

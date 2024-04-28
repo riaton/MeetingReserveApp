@@ -6,18 +6,31 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using MeetingApp.Infrastructure;
 using MeetingApp.Models;
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 
 //[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
 namespace MeetingApp;
 public class GetOneMeeting
 {
-    public IGetConferenceRepository repository = new DynamoDBAccess();
-    private readonly JsonSerializerOptions _options = new JsonSerializerOptions
-            {
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
+    private readonly IGetConferenceRepository _repository;
+    private readonly JsonSerializerOptions _options = new()
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+    public GetOneMeeting()
+    {
+        var client = new AmazonDynamoDBClient();
+        _repository = new DynamoDBAccess(client, 
+            new DynamoDBContext(client));
+    }
+    public GetOneMeeting(IGetConferenceRepository repository)
+    {
+        _repository = repository;
+    }
     /// <summary>
     /// 会議室情報 個別取得
     /// </summary>
@@ -34,12 +47,12 @@ public class GetOneMeeting
             if(validateOk == false || model == null) return CreateErrorResponse(CommonResult.ValidateError);
 
             //DynamoDBからデータ取得
-            var res = await repository.GetOne(model.GetPartitionKey(),
+            var res = await _repository.GetOne(model.GetPartitionKey(),
                 model.GetSortKey());
             if(res == null) return CreateErrorResponse(CommonResult.DataNotFound);
             
             //レスポンス生成
-            GetOneResponseModel resp = new GetOneResponseModel(res);
+            GetOneResponseModel resp = new (res);
             if(!resp.Status) throw new Exception();
 
             return new APIGatewayProxyResponse
@@ -61,7 +74,7 @@ public class GetOneMeeting
     /// <param name="statusCode"></param>
     /// <param name="message"></param>
     /// <returns>APIGatewayProxyResponseインスタンス</returns>
-    private APIGatewayProxyResponse CreateErrorResponse(int statusCode){
+    private static APIGatewayProxyResponse CreateErrorResponse(int statusCode){
         return new APIGatewayProxyResponse{
             StatusCode = statusCode,
             Headers = CommonResult.ResponseHeader,

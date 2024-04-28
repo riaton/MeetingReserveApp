@@ -2,13 +2,23 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
 using MeetingApp.Infrastructure;
 using MeetingApp.Models;
+using Amazon.DynamoDBv2;
 
 //[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
 namespace MeetingApp;
 public class RegisterMeeting
 {
-    public IUpdateConferenceRepository repository = new DynamoDBUpdate();
+    private readonly IUpdateConferenceRepository _repository;
+
+    public RegisterMeeting()
+    {
+        _repository = new DynamoDBUpdate(new AmazonDynamoDBClient());
+    }
+    public RegisterMeeting(IUpdateConferenceRepository repository)
+    {
+        _repository = repository;
+    }
     /// <summary>
     /// 会議室情報 登録
     /// </summary>
@@ -24,7 +34,7 @@ public class RegisterMeeting
             if(validateOk == false || model == null) return CreateResponse(CommonResult.ValidateError);
 
             //DynamoDBへデータ登録
-            int res = await repository.Register(model);
+            int res = await _repository.Register(model);
             if(res != CommonResult.OK) {
                 Console.WriteLine("A meeting register failed");
                 return CreateResponse(CommonResult.InternalServerError);
@@ -44,7 +54,7 @@ public class RegisterMeeting
     /// <param name="statusCode"></param>
     /// <param name="message"></param>
     /// <returns>APIGatewayProxyResponseインスタンス</returns>
-    private APIGatewayProxyResponse CreateResponse(int statusCode){
+    private static APIGatewayProxyResponse CreateResponse(int statusCode){
         return new APIGatewayProxyResponse{
             StatusCode = statusCode,
             Headers = CommonResult.ResponseHeader

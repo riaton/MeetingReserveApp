@@ -6,18 +6,31 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using MeetingApp.Infrastructure;
 using MeetingApp.Models;
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 
 //[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
 namespace MeetingApp;
 public class GetAllMeetings
 {
-    public IGetConferenceRepository repository = new DynamoDBAccess();
-    private readonly JsonSerializerOptions _options = new JsonSerializerOptions
-            {
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
+    private readonly IGetConferenceRepository _repository;
+    private readonly JsonSerializerOptions _options = new()
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+    public GetAllMeetings()
+    {
+        var client = new AmazonDynamoDBClient();
+        _repository = new DynamoDBAccess(client, 
+            new DynamoDBContext(client));
+    }
+    public GetAllMeetings(IGetConferenceRepository repository)
+    {
+        _repository = repository;
+    }
     /// <summary>
     /// 会議室情報 全取得
     /// </summary>
@@ -34,7 +47,7 @@ public class GetAllMeetings
             if(validateOk == false || model == null) return CreateErrorResponse(CommonResult.ValidateError);
 
             //DynamoDBからデータ取得
-            var res = await repository.GetAll(model.GetPartitionKey(), 
+            var res = await _repository.GetAll(model.GetPartitionKey(), 
                 model.GetSortKeyPrefix());
             if(res == null) return CreateErrorResponse(CommonResult.DataNotFound);
             
@@ -62,7 +75,7 @@ public class GetAllMeetings
     /// <param name="statusCode"></param>
     /// <param name="message"></param>
     /// <returns>APIGatewayProxyResponseインスタンス</returns>
-    private APIGatewayProxyResponse CreateErrorResponse(int statusCode){
+    private static APIGatewayProxyResponse CreateErrorResponse(int statusCode){
         return new APIGatewayProxyResponse{
             StatusCode = statusCode,
             Headers = CommonResult.ResponseHeader,

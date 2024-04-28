@@ -24,9 +24,11 @@ public class UpdateMeetingRequestModel {
     public string? StartAt { get; set; }
     public string? Contents { get; set; }
     public List<string>? Participants { get; set; }
+
     public string CreatePartitionKey(){
         return Date + _ + Room;
     }
+
     public string CreateBeginsSortKey(){
         return BeginsPrefix + StartAt;
     }

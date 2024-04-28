@@ -8,7 +8,6 @@ internal static class ModelFactory {
         T? model = default;
         try
         {
-            //JSONからObjectに変換する
             var req = JsonSerializer.Deserialize<T>(body);
             if(req is null){
                 Console.WriteLine("model deserialize error");
@@ -16,7 +15,6 @@ internal static class ModelFactory {
             else
             {
                 model = req;
-                //Validationする
                 var ctx = new ValidationContext(req);
                 var results = new List<ValidationResult>();
                 if(Validator.TryValidateObject(req, ctx, results, true))

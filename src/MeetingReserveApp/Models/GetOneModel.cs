@@ -70,7 +70,8 @@ public class GetOneResponseModel {
     public int? MinTo { get; }
     public string? Contents { get; }
     public List<string>? Participants { get; }
-    private List<int> ConvertHourFrom(string time){
+
+    private static List<int> ConvertHourFrom(string time){
         string hourFrom = time.Split('@')[1];
         string hour = hourFrom.Substring(0, 2);
         string min = hourFrom.Substring(2, 2);
@@ -78,7 +79,7 @@ public class GetOneResponseModel {
         return new List<int>(){Convert.ToInt32(hour), Convert.ToInt32(min)};
     }
 
-    private List<int>? ConvertEndAt(string? endAt){
+    private static List<int>? ConvertEndAt(string? endAt){
         if(endAt == null) return null;
         if(endAt.Length != EndAtLength) return null;
 
@@ -88,11 +89,11 @@ public class GetOneResponseModel {
         return new List<int>(){Convert.ToInt32(hour), Convert.ToInt32(min)};
     }
 
-    private string ConvertRoom(string dateRoom){
+    private static string ConvertRoom(string dateRoom){
         return dateRoom.Split('_')[1];
     }
 
-    private List<int> ConvertDateFrom(string dateRoom){
+    private static List<int> ConvertDateFrom(string dateRoom){
         string date = dateRoom.Split('_')[0];
         string year = date.Substring(0, 4);
         string month = date.Substring(4, 2);

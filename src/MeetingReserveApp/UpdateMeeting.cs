@@ -2,13 +2,23 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
 using MeetingApp.Infrastructure;
 using MeetingApp.Models;
+using Amazon.DynamoDBv2;
 
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
 namespace MeetingApp;
 public class UpdateMeeting
 {
-    public IUpdateConferenceRepository repository = new DynamoDBUpdate();
+    private readonly IUpdateConferenceRepository _repository;
+
+    public UpdateMeeting()
+    {
+        _repository = new DynamoDBUpdate(new AmazonDynamoDBClient());
+    }
+    public UpdateMeeting(IUpdateConferenceRepository repository)
+    {
+        _repository = repository;
+    }
     /// <summary>
     /// 会議室情報 更新
     /// </summary>
@@ -24,7 +34,7 @@ public class UpdateMeeting
             if(validateOk == false || model == null) return CreateResponse(CommonResult.ValidateError);
 
             //DynamoDBデータ更新
-            int res = await repository.Update(model);
+            int res = await _repository.Update(model);
             if(res != CommonResult.OK) {
                 Console.WriteLine("A meeting update failed");
                 return CreateResponse(CommonResult.InternalServerError);
@@ -44,7 +54,7 @@ public class UpdateMeeting
     /// <param name="statusCode"></param>
     /// <param name="message"></param>
     /// <returns>APIGatewayProxyResponseインスタンス</returns>
-    private APIGatewayProxyResponse CreateResponse(int statusCode){
+    private static APIGatewayProxyResponse CreateResponse(int statusCode){
         return new APIGatewayProxyResponse{
             StatusCode = statusCode,
             Headers = CommonResult.ResponseHeader,

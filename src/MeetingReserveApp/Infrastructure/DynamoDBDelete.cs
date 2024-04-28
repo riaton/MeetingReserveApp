@@ -4,10 +4,13 @@ using MeetingApp.Models;
 
 namespace MeetingApp.Infrastructure;
 public class DynamoDBDelete : IDeleteConferenceRepository {
-    private string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
-    //private string? Table = "MeetingsTable";
-    public AmazonDynamoDBClient client = new AmazonDynamoDBClient();
+    private readonly IAmazonDynamoDB _client;
+    private readonly string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
 
+    public DynamoDBDelete(IAmazonDynamoDB client)
+    {
+        _client = client;
+    }
     /// <summary>
     /// 会議室情報 削除(DBアクセス)
     /// </summary>
@@ -33,7 +36,7 @@ public class DynamoDBDelete : IDeleteConferenceRepository {
                 },
                 ConditionExpression = "#v = :end_at"
             };
-            var res = await client.DeleteItemAsync(param);
+            var res = await _client.DeleteItemAsync(param);
             
             return (int)res.HttpStatusCode;
         }

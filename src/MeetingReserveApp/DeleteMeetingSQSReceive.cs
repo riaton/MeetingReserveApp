@@ -4,15 +4,28 @@ using Amazon.SQS;
 using Amazon.SQS.Model;
 using MeetingApp.Infrastructure;
 using MeetingApp.Models;
+using Amazon.DynamoDBv2;
 
 //[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 namespace MeetingApp;
 public class DeleteMeetingSQSReceive
 {
-    public IDeleteConferenceRepository repository = new DynamoDBDelete();
-    private string? QueueURL = 
+    private readonly IDeleteConferenceRepository _repository;
+    private readonly IAmazonSQS _sqsClient;
+    private readonly string? QueueURL = 
       Environment.GetEnvironmentVariable("DLQ_URL");
-    public IAmazonSQS _sqsClient = new AmazonSQSClient();
+
+    public DeleteMeetingSQSReceive()
+    {
+        _sqsClient = new AmazonSQSClient();
+        _repository = new DynamoDBDelete(new AmazonDynamoDBClient());
+    }
+    public DeleteMeetingSQSReceive(IDeleteConferenceRepository repository, 
+        IAmazonSQS client)
+    {
+        _repository = repository;
+        _sqsClient = client;
+    }
     /// <summary>
     /// 会議室予約 削除(受け側)
     /// </summary>
@@ -33,7 +46,7 @@ public class DeleteMeetingSQSReceive
                     throw new Exception();
                 };
                 //削除
-                int res = await repository.Delete(model!);
+                int res = await _repository.Delete(model!);
                 if(res == CommonResult.OK){
                     Console.WriteLine($"delete succeeded, {record.Body}");
                 }
@@ -60,19 +73,19 @@ public class DeleteMeetingSQSReceive
     /// <param name="messageBody"></param>
     /// <returns>キューに送信した結果のHTTPステータスコード</returns>
     private static async Task SendMessage(
-      IAmazonSQS sqsClient, string? queueUrl, string messageBody)
+        IAmazonSQS sqsClient, string? queueUrl, string messageBody)
     {
-      SendMessageRequest sendMessageRequest = new SendMessageRequest();
-      sendMessageRequest.QueueUrl = queueUrl;
-      sendMessageRequest.MessageBody = messageBody;
+        SendMessageRequest sendMessageRequest = new SendMessageRequest();
+        sendMessageRequest.QueueUrl = queueUrl;
+        sendMessageRequest.MessageBody = messageBody;
 
-      SendMessageResponse response =
-        await sqsClient.SendMessageAsync(sendMessageRequest);
-      Console.WriteLine($"Message added to dead letter queue\n  {queueUrl}");
-      //ステータスコード200以外はNG
-      if((int)response.HttpStatusCode != CommonResult.OK){
-          Console.WriteLine($"Failed to send message to dead letter queue, {messageBody}");
-          throw new Exception();
-      }
+        SendMessageResponse response =
+            await sqsClient.SendMessageAsync(sendMessageRequest);
+        Console.WriteLine($"Message added to dead letter queue\n  {queueUrl}");
+        //ステータスコード200以外はNG
+        if((int)response.HttpStatusCode != CommonResult.OK){
+            Console.WriteLine($"Failed to send message to dead letter queue, {messageBody}");
+            throw new Exception();
+        }
     }
 }
