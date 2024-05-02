@@ -5,12 +5,19 @@ using MeetingApp.Models;
 namespace MeetingApp.Infrastructure;
 public class DynamoDBDelete : IDeleteConferenceRepository {
     private readonly IAmazonDynamoDB _client;
-    private readonly string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
+    private readonly string? _table;
+    public DeleteItemRequest request = new();
 
-    public DynamoDBDelete(IAmazonDynamoDB client)
+    public DynamoDBDelete(IAmazonDynamoDB client, string? tableName=null)
     {
         _client = client;
+        if(tableName == null){
+            _table = Environment.GetEnvironmentVariable("TABLE_NAME");
+        } else {
+            _table = tableName;
+        }
     }
+    
     /// <summary>
     /// 会議室情報 削除(DBアクセス)
     /// </summary>
@@ -19,24 +26,13 @@ public class DynamoDBDelete : IDeleteConferenceRepository {
     public async Task<int> Delete(DeleteMeetingRequestModel model){
         try
         {
-            if(Table == null){
+            if(_table == null){
                 Console.WriteLine("Environment variable of table name is null at Delete()");
                 return CommonResult.InternalServerError;
             }
-            var param = new DeleteItemRequest{
-                TableName = Table,
-                Key = new Dictionary<string, AttributeValue>(){
-                {"date_room", new AttributeValue{ S = model.CreatePartitionKey() }},
-                {"time", new AttributeValue{ S = model.CreateSortKey() }}},
-                ExpressionAttributeNames = new Dictionary<string, string>(){
-                    { "#v", "end_at" },
-                },
-                ExpressionAttributeValues = new Dictionary<string, AttributeValue>(){
-                    { ":end_at", new AttributeValue(){ S = model.EndAt }},
-                },
-                ConditionExpression = "#v = :end_at"
-            };
-            var res = await _client.DeleteItemAsync(param);
+
+            CreateDeleteQuery(model);
+            var res = await _client.DeleteItemAsync(request);
             
             return (int)res.HttpStatusCode;
         }
@@ -45,5 +41,21 @@ public class DynamoDBDelete : IDeleteConferenceRepository {
             Console.WriteLine($"Failed to delete dynamodb record at Delete(), " + e);
             return CommonResult.InternalServerError;
         }
+    }
+
+    /// <summary>
+    /// 会議室情報 削除 リクエスト生成
+    /// </summary>
+    /// <param name="model"></param>
+    /// <returns></returns>
+    public void CreateDeleteQuery(DeleteMeetingRequestModel model){
+        request.TableName = _table;
+        request.Key["date_room"] = new AttributeValue{ S = model.CreatePartitionKey() };
+        request.Key["time"] = new AttributeValue{ S = model.CreateSortKey() };
+        request.ExpressionAttributeNames = new Dictionary<string, string>(){
+                { "#v", "end_at" }};
+        request.ExpressionAttributeValues = new Dictionary<string, AttributeValue>(){
+                { ":end_at", new AttributeValue(){ S = model.EndAt }}};
+        request.ConditionExpression = "#v = :end_at";
     }
 }

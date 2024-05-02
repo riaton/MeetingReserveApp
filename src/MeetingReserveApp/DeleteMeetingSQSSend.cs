@@ -22,6 +22,7 @@ public class DeleteMeetingSQSSend
     {
         _sqsClient = client;
     }
+    
     /// <summary>
     /// 会議室情報 削除(送り側)
     /// </summary>

@@ -20,6 +20,7 @@ public class GetAllMeetings
             Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
+    private SemaphoreSlim _semaphore = new(1, 1);
 
     public GetAllMeetings()
     {
@@ -31,6 +32,7 @@ public class GetAllMeetings
     {
         _repository = repository;
     }
+
     /// <summary>
     /// 会議室情報 全取得
     /// </summary>
@@ -39,6 +41,7 @@ public class GetAllMeetings
     /// <returns>APIGatewayProxyResponseインスタンス</returns>
     public async Task<APIGatewayProxyResponse> GetAllMeetingsHandler(APIGatewayProxyRequest input, ILambdaContext context)
     {
+        await _semaphore.WaitAsync();
         try
         {
             //リクエストのバリデーション
@@ -68,7 +71,12 @@ public class GetAllMeetings
             Console.WriteLine($"Exception occurred, " + e);
             return CreateErrorResponse(CommonResult.InternalServerError);
         }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
+    
     /// <summary>
     /// レスポンス生成
     /// </summary>

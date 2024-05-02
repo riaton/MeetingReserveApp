@@ -9,11 +9,17 @@ namespace MeetingApp.Infrastructure;
 public class DynamoDBAccess : IGetConferenceRepository {
     private readonly IAmazonDynamoDB _client;
     private readonly IDynamoDBContext _context;
-    private readonly string? Table = Environment.GetEnvironmentVariable("TABLE_NAME");
-    public DynamoDBAccess(IAmazonDynamoDB client, IDynamoDBContext context)
+    private readonly string? _table;
+    public GetItemRequest request = new();
+    public DynamoDBAccess(IAmazonDynamoDB client, IDynamoDBContext context, string? tableName=null)
     {
         _client = client;
         _context = context;
+        if(tableName == null){
+            _table = Environment.GetEnvironmentVariable("TABLE_NAME");
+        } else {
+            _table = tableName;
+        }
     }
     
     /// <summary>
@@ -21,57 +27,57 @@ public class DynamoDBAccess : IGetConferenceRepository {
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>
-    public async Task<List<DynamoDBMeetingsTableItem>?> GetAll(string partitionKey, string sortKeyPrefix){
-        try
-        {
-            if(Table == null){
-                Console.WriteLine("Environment variable of table name is null at GetAll()");
-                return null;
-            }
-            var sortKeys = new[]{ sortKeyPrefix };
-            var items = await _context.QueryAsync<DynamoDBMeetingsTableItem>
-                (partitionKey, QueryOperator.BeginsWith, sortKeys)
-                .GetRemainingAsync(); 
-            if(items == null || items.Count == 0) {
-                throw new ResourceNotFoundException("DynamoDB get count is 0");
-            }
-            return items;
-        }
-        catch(ResourceNotFoundException e)
-        {
-            Console.WriteLine($"Failed to get from dynamodb at GetAll(), " + e.Message);
+    public async Task<List<DynamoDBMeetingsTableItem>?> GetAll(string partitionKey, string[] sortKeyPrefix){
+        if(_table == null){
+            Console.WriteLine("Environment variable of table name is null at GetAll()");
             return null;
         }
+
+        var items = await _context.QueryAsync<DynamoDBMeetingsTableItem>
+            (partitionKey, QueryOperator.BeginsWith, sortKeyPrefix)
+            .GetRemainingAsync();
+            
+        if(items.Count == 0) {
+            Console.WriteLine("Failed to get from dynamodb at GetAll()"); 
+            return null;
+        }
+
+        return items;
     }
+    
     /// <summary>
     /// 会議室情報 個別取得(DBアクセス)
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>
     public async Task<GetItemResponse?> GetOne(string partitionKey, string sortKey){
-        try
-        {
-            if(Table == null){
-                Console.WriteLine("Environment variable of table name is null at GetOne()");
-                return null;
-            }
-            var param = new GetItemRequest{
-                Key = new Dictionary<string, AttributeValue>(){
-                {"date_room", new AttributeValue{ S = partitionKey }},
-                {"time", new AttributeValue{ S = sortKey }}},
-                TableName = Table
-            };
-            var response = await _client.GetItemAsync(param);
-            if(response.Item.Count() == 0) {
-                throw new ResourceNotFoundException("GetOne count is 0");
-            }
-
-            return response;
-        }
-        catch(ResourceNotFoundException e)
-        {
-            Console.WriteLine($"Failed to get from dynamodb, " + e.Message);
+        if(_table == null){
+            Console.WriteLine("Environment variable of table name is null at GetOne()");
             return null;
         }
+
+        CreateGetOneQuery(partitionKey, sortKey);
+
+        var response = await _client.GetItemAsync(request);
+        if(response == null || response.Item.Count == 0) {
+            if(response == null) Console.WriteLine("response is null");
+            Console.WriteLine("Failed to get from dynamodb at GetOne()"); 
+            return null;
+        }
+
+        return response;
+    }
+
+    /// <summary>
+    /// 会議室情報 個別取得 リクエスト生成
+    /// </summary>
+    /// <param name="partitionKey"></param>
+    /// <param name="sortKey"></param>
+    /// <returns></returns>
+    public void CreateGetOneQuery(string partitionKey, string sortKey){
+        request.Key = new Dictionary<string, AttributeValue>(){
+                {"date_room", new AttributeValue{ S = partitionKey }},
+                {"time", new AttributeValue{ S = sortKey }}};
+        request.TableName = _table;
     }
 }

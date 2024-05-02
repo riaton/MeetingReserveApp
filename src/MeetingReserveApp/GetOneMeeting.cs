@@ -14,12 +14,14 @@ using Amazon.DynamoDBv2.DataModel;
 namespace MeetingApp;
 public class GetOneMeeting
 {
+
     private readonly IGetConferenceRepository _repository;
     private readonly JsonSerializerOptions _options = new()
         {
             Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
+    private SemaphoreSlim _semaphore = new(1, 1);
 
     public GetOneMeeting()
     {
@@ -31,6 +33,7 @@ public class GetOneMeeting
     {
         _repository = repository;
     }
+    
     /// <summary>
     /// 会議室情報 個別取得
     /// </summary>
@@ -39,6 +42,7 @@ public class GetOneMeeting
     /// <returns>APIGatewayProxyResponseインスタンス</returns>
     public async Task<APIGatewayProxyResponse> GetOneMeetingHandler(APIGatewayProxyRequest input, ILambdaContext context)
     {
+        await _semaphore.WaitAsync();
         try
         {
             //リクエストのバリデーション
@@ -67,7 +71,12 @@ public class GetOneMeeting
             Console.WriteLine($"Exception occurred, " + e);
             return CreateErrorResponse(CommonResult.InternalServerError);
         }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
+
     /// <summary>
     /// レスポンス生成
     /// </summary>

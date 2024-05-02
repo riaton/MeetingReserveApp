@@ -48,7 +48,7 @@ Resources:
   getOneMeetingFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: SampleFunction::SampleFunction.GetOneMeeting::GetOneMeetingHandler
+      Handler: SampleFunction::MeetingApp.GetOneMeeting::GetOneMeetingHandler
       AutoPublishAlias: getOneMeeting
       Policies:
         - AmazonDynamoDBReadOnlyAccess
@@ -62,7 +62,7 @@ Resources:
   getAllMeetingsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: SampleFunction::SampleFunction.GetAllMeetings::GetAllMeetingsHandler
+      Handler: SampleFunction::MeetingApp.GetAllMeetings::GetAllMeetingsHandler
       AutoPublishAlias: getAllMeeting
       Policies:
         - AmazonDynamoDBReadOnlyAccess
@@ -76,7 +76,7 @@ Resources:
   registerMeetingFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: SampleFunction::SampleFunction.RegisterMeeting::RegisterMeetingHandler
+      Handler: SampleFunction::MeetingApp.RegisterMeeting::RegisterMeetingHandler
       AutoPublishAlias: registerMeeting
       Policies:
         - AmazonDynamoDBFullAccess
@@ -90,7 +90,7 @@ Resources:
   updateMeetingFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: SampleFunction::SampleFunction.UpdateMeeting::UpdateMeetingHandler
+      Handler: SampleFunction::MeetingApp.UpdateMeeting::UpdateMeetingHandler
       AutoPublishAlias: updateMeeting
       Policies:
         - AmazonDynamoDBFullAccess
@@ -104,7 +104,7 @@ Resources:
   deleteMeetingSendToSQSFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: SampleFunction::SampleFunction.DeleteMeetingSQSSend::DeleteMeetingSQSSendHandler
+      Handler: SampleFunction::MeetingApp.DeleteMeetingSQSSend::DeleteMeetingSQSSendHandler
       AutoPublishAlias: deleteMeetingSendToSQS
       Policies:
         - AmazonSQSFullAccess 
@@ -118,7 +118,7 @@ Resources:
   deleteMeetingReceiveFromSQSFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: SampleFunction::SampleFunction.DeleteMeetingSQSReceive::DeleteMeetingSQSReceiveHandler
+      Handler: SampleFunction::MeetingApp.DeleteMeetingSQSReceive::DeleteMeetingSQSReceiveHandler
       AutoPublishAlias: deleteMeetingReceiveFromSQS
       Policies:
         - AWSLambdaSQSQueueExecutionRole

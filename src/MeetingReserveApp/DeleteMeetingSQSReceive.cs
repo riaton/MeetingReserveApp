@@ -26,6 +26,8 @@ public class DeleteMeetingSQSReceive
         _repository = repository;
         _sqsClient = client;
     }
+    private SemaphoreSlim _semaphore = new(1, 1);
+
     /// <summary>
     /// 会議室予約 削除(受け側)
     /// </summary>
@@ -34,6 +36,7 @@ public class DeleteMeetingSQSReceive
     public async Task DeleteMeetingSQSReceiveHandler(
         SQSEvent input, ILambdaContext context)
     {
+        await _semaphore.WaitAsync();
         try
         {
             foreach(var record in input.Records){
@@ -62,6 +65,10 @@ public class DeleteMeetingSQSReceive
         {
             //ログを出して終了
             Console.WriteLine($"Exception occurred, " + e);
+        }
+        finally
+        {
+            _semaphore.Release();
         }
     }
 

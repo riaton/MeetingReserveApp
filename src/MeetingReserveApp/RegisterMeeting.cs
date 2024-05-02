@@ -19,6 +19,8 @@ public class RegisterMeeting
     {
         _repository = repository;
     }
+    private SemaphoreSlim _semaphore = new(1, 1);
+
     /// <summary>
     /// 会議室情報 登録
     /// </summary>
@@ -27,6 +29,7 @@ public class RegisterMeeting
     /// <returns>APIGatewayProxyResponseインスタンス</returns>
     public async Task<APIGatewayProxyResponse> RegisterMeetingHandler(APIGatewayProxyRequest input, ILambdaContext context)
     {
+        await _semaphore.WaitAsync();
         try
         {
             //リクエストのバリデーション
@@ -47,7 +50,12 @@ public class RegisterMeeting
             Console.WriteLine($"Exception occurred, " + e);
             return CreateResponse(CommonResult.InternalServerError);
         }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
+    
     /// <summary>
     /// レスポンス生成
     /// </summary>

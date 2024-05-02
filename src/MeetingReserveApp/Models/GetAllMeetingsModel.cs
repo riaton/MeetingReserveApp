@@ -17,8 +17,8 @@ public class GetAllMeetingsRequestModel {
         return StartDate + _ + Room;
     }
 
-    public string GetSortKeyPrefix(){
-        return Prefix;
+    public string[] GetSortKeyPrefix(){
+        return new[]{ Prefix };
     }
 }
 
@@ -34,6 +34,16 @@ public class DynamoDBMeetingsTableItem {
     public string? EndAt { get; set; }
     [DynamoDBProperty("email")]
     public string? Email { get; set; }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is DynamoDBMeetingsTableItem item &&
+            PartitionKey == item.PartitionKey &&
+            SortKey == item.SortKey &&
+            Title == item.Title &&
+            EndAt == item.EndAt &&
+            Email == item.Email;
+    }
 }
 
 public class GetAllMeetingsResponseModel {
