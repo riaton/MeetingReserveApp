@@ -1,0 +1,23 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      dotnet: 6.0
+  build:
+    commands:
+      - sam package --template-file template.yaml --s3-bucket samtutorial9 --output-template-file package.yml
+      - dotnet build -c Release -o .
+      - cp ./bin/Release/net6.0/* .
+artifacts:
+  files:
+    - package.yml
+    - Amazon.Lambda.APIGatewayEvents.dll
+    - Amazon.Lambda.Core.dll
+    - Amazon.Lambda.Serialization.SystemTextJson.dll
+    - Amazon.Lambda.SQSEvents.dll
+    - AWSSDK.Core.dll
+    - AWSSDK.DynamoDBv2.dll
+    - AWSSDK.SQS.dll
+    - MeetingReserveApp.dll
+    - MeetingReserveApp.deps.json
+    - MeetingReserveApp.runtimeconfig.json

@@ -46,7 +46,7 @@ public class DeleteMeetingSQSReceive
                     Console.WriteLine($"Receive message validation failed, {record.Body}");
                     //DLQに送信
                     await SendMessage(_sqsClient, QueueURL, record.Body);
-                    throw new Exception();
+                    continue;
                 };
                 //削除
                 int res = await _repository.Delete(model!);

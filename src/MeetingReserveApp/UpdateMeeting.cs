@@ -35,7 +35,6 @@ public class UpdateMeeting
             //リクエストのバリデーション
             var (validateOk, model) = ModelFactory.CreateModel<UpdateMeetingRequestModel>(input.Body);
             if(validateOk == false || model == null) return CreateResponse(CommonResult.ValidateError);
-
             //DynamoDBデータ更新
             int res = await _repository.Update(model);
             if(res != CommonResult.OK) {

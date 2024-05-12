@@ -22,6 +22,7 @@ public class GetAllMeetingsRequestModel {
     }
 }
 
+#pragma warning disable CS0659
 [DynamoDBTable("MeetingsTable")]
 public class DynamoDBMeetingsTableItem {
     [DynamoDBHashKey("date_room")]

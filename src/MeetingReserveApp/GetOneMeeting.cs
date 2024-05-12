@@ -9,12 +9,12 @@ using MeetingApp.Models;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 
+
 //[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
 namespace MeetingApp;
 public class GetOneMeeting
 {
-
     private readonly IGetConferenceRepository _repository;
     private readonly JsonSerializerOptions _options = new()
         {
@@ -22,6 +22,7 @@ public class GetOneMeeting
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
     private SemaphoreSlim _semaphore = new(1, 1);
+    public GetOneRequestModel? model;
 
     public GetOneMeeting()
     {
@@ -47,7 +48,7 @@ public class GetOneMeeting
         {
             //リクエストのバリデーション
             var pathParameters = JsonSerializer.Serialize(input.PathParameters, _options);
-            var (validateOk, model) = ModelFactory.CreateModel<GetOneRequestModel>(pathParameters);
+            (bool validateOk, model) = ModelFactory.CreateModel<GetOneRequestModel>(pathParameters);
             if(validateOk == false || model == null) return CreateErrorResponse(CommonResult.ValidateError);
 
             //DynamoDBからデータ取得
